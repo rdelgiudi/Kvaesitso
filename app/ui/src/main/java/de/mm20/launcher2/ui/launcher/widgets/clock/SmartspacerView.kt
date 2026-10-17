@@ -31,6 +31,13 @@ import com.kieronquinn.app.smartspacer.sdk.client.views.popup.PopupFactory
 import com.kieronquinn.app.smartspacer.sdk.model.SmartspaceTarget
 import de.mm20.launcher2.ui.R
 
+/**
+ * Number of live [BcSmartspaceView]s. They all share the [SmartspacerClient] singleton, and
+ * [SmartspacerClient.close] tears it down for all of them, so only close it when the last one is released.
+ * Views are only created and released on the main thread.
+ */
+private var activeViews = 0
+
 @RequiresApi(29)
 @Composable
 fun SmartspacerView(
@@ -60,13 +67,15 @@ fun SmartspacerView(
                 view.setTintColour(contentColor.toArgb())
                 view.popupFactory = popupFactory
 
+                activeViews++
                 view
             },
             update = { view ->
                 view.setTintColour(contentColor.toArgb())
             },
             onRelease = {
-                SmartspacerClient.close()
+                activeViews--
+                if (activeViews == 0) SmartspacerClient.close()
             }
         )
     }

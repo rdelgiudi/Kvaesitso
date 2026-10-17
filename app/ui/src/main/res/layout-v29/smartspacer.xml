@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.kieronquinn.app.smartspacer.sdk.client.views.BcSmartspaceView xmlns:android="http://schemas.android.com/apk/res/android"
+<de.mm20.launcher2.ui.launcher.widgets.clock.LauncherSmartspaceView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/bc_smartspace_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -20,4 +20,4 @@
         android:importantForAccessibility="no"
         android:visibility="visible" />
 
-</com.kieronquinn.app.smartspacer.sdk.client.views.BcSmartspaceView>
+</de.mm20.launcher2.ui.launcher.widgets.clock.LauncherSmartspaceView>
