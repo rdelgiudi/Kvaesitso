@@ -133,8 +133,20 @@ jobs:
           mkdir -p "$RUNNER_TEMP/keystore"
           echo "$ENCODED_STRING" | base64 -di > "$RUNNER_TEMP/keystore/keystore.jks"
 
-      # Uses upstream's own "nightly" build type: release-optimised, signed with
-      # the gh-actions signing config, app id de.mm20.launcher2.nightly.
+      # Rebrand upstream's "nightly" build type in this checkout only, so the
+      # feature branch carries no changes to upstream files. Each replacement
+      # must match, otherwise the build fails (e.g. if upstream changed the line).
+      - name: Rebrand as Smartspacer build
+        run: |
+          set -e
+          replace() { grep -qF "$2" "$1" || { echo "::error file=$1::'$2' not found"; exit 1; }; sed -i "s|$2|$3|" "$1"; }
+          replace core/base/src/nightly/res/values/strings.xml '>Kvaesitso Nightly<' '>Kvaesitso Smartspacer<'
+          replace app/app/build.gradle.kts 'applicationIdSuffix = ".nightly"' 'applicationIdSuffix = ".smartspacer"'
+          replace app/app/build.gradle.kts '}-nightly"' '}-smartspacer"'
+          replace app/ui/src/nightly/res/xml/shortcuts.xml 'de.mm20.launcher2.nightly' 'de.mm20.launcher2.smartspacer'
+
+      # Uses the rebranded "nightly" build type: release-optimised, signed with
+      # the gh-actions signing config, app id de.mm20.launcher2.smartspacer.
       - name: Build and sign APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
