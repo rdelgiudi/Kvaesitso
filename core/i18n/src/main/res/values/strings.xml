@@ -914,6 +914,8 @@
     <string name="clock_style_segment">7-segment</string>
     <string name="clock_style_empty">No clock</string>
     <string name="clock_style_custom">Custom widget</string>
+    <string name="clock_style_smartspacer">Smartspacer</string>
+    <string name="clock_style_smartspacer_get">Get Smartspacer</string>
     <string name="clock_variant_outlined">Outlined</string>
     <string name="clock_variant_analog_ticks">Ticks</string>
     <string name="menu_show_filters">Show filters</string>

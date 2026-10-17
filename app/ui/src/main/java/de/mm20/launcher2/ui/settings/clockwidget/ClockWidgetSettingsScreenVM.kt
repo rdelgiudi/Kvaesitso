@@ -2,6 +2,7 @@ package de.mm20.launcher2.ui.settings.clockwidget
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.preferences.BatteryStatusVisibility
 import de.mm20.launcher2.preferences.ClockWidgetAlignment
 import de.mm20.launcher2.preferences.ClockWidgetColors
@@ -26,7 +27,7 @@ class ClockWidgetSettingsScreenVM : ViewModel(), KoinComponent {
     }
 
     val availableClockStyles = combine(settings.digital1, settings.analog, settings.custom) { digital1, analog, custom ->
-        listOf(
+        listOfNotNull(
             digital1,
             ClockWidgetStyle.Digital2,
             analog,
@@ -34,6 +35,7 @@ class ClockWidgetSettingsScreenVM : ViewModel(), KoinComponent {
             ClockWidgetStyle.Segment,
             ClockWidgetStyle.Binary,
             custom,
+            if (isAtLeastApiLevel(29)) ClockWidgetStyle.Smartspacer else null,
             ClockWidgetStyle.Empty,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())

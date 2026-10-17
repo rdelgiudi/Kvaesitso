@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.ktx.tryStartActivity
+import de.mm20.launcher2.preferences.ClockWidgetStyle
 import de.mm20.launcher2.preferences.ui.ClockWidgetSettings
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.AlarmPartProvider
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.BatteryPartProvider
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.koin.core.component.KoinComponent
@@ -28,11 +30,14 @@ import org.koin.core.component.inject
 class ClockWidgetVM : ViewModel(), KoinComponent {
     private val settings: ClockWidgetSettings by inject()
 
-    private val partProviders = settings.parts.combine(settings.useSmartspacer) { p, s ->
-        p to s
-    }.map { (parts, smartspacer) ->
-        if (smartspacer && isAtLeastApiLevel(29)) {
-            return@map listOf(SmartspacerPartProvider())
+    private val partProviders = combine(
+        settings.parts,
+        settings.useSmartspacer,
+        settings.clockStyle.map { it is ClockWidgetStyle.Smartspacer }.distinctUntilChanged(),
+    ) { parts, smartspacer, smartspacerClock ->
+        // Only one Smartspacer view at a time: if the clock itself is Smartspacer, use regular parts below it
+        if (smartspacer && !smartspacerClock && isAtLeastApiLevel(29)) {
+            return@combine listOf(SmartspacerPartProvider())
         }
 
         val providers = mutableListOf<PartProvider>()

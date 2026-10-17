@@ -70,6 +70,7 @@ import de.mm20.launcher2.ui.launcher.widgets.clock.clocks.DigitalClock1
 import de.mm20.launcher2.ui.launcher.widgets.clock.clocks.DigitalClock2
 import de.mm20.launcher2.ui.launcher.widgets.clock.clocks.OrbitClock
 import de.mm20.launcher2.ui.launcher.widgets.clock.clocks.SegmentClock
+import de.mm20.launcher2.ui.launcher.widgets.clock.clocks.SmartspacerClock
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.PartProvider
 import de.mm20.launcher2.ui.locals.LocalPreferDarkContentOverWallpaper
 import de.mm20.launcher2.ui.locals.LocalTimeFormat
@@ -171,7 +172,7 @@ fun ClockWidget(
                             ) {
                                 Box(
                                     modifier = Modifier.clickable(
-                                        enabled = clockStyle !is ClockWidgetStyle.Empty,
+                                        enabled = clockStyle !is ClockWidgetStyle.Empty && clockStyle !is ClockWidgetStyle.Smartspacer,
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
@@ -218,7 +219,7 @@ fun ClockWidget(
                                 }
                                 Box(
                                     modifier = Modifier.clickable(
-                                        enabled = clockStyle !is ClockWidgetStyle.Empty,
+                                        enabled = clockStyle !is ClockWidgetStyle.Empty && clockStyle !is ClockWidgetStyle.Smartspacer,
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
@@ -326,6 +327,7 @@ fun Clock(
         )
 
         is ClockWidgetStyle.Custom -> CustomClock(style, compact, useThemeColor, darkColors)
+        is ClockWidgetStyle.Smartspacer -> SmartspacerClock(compact, useThemeColor, darkColors)
         is ClockWidgetStyle.Empty -> {}
         else -> {}
     }
@@ -361,7 +363,9 @@ fun ConfigureClockWidgetSheet(
         val monospaced by viewModel.monospaced.collectAsState()
         val useAccentColor by viewModel.useThemeColor.collectAsState()
         val parts by viewModel.parts.collectAsState()
-        val smartspacer by viewModel.useSmartspacer.collectAsState()
+        val useSmartspacer by viewModel.useSmartspacer.collectAsState()
+        // The Smartspacer clock style takes precedence over the Smartspacer dynamic zone
+        val smartspacer = useSmartspacer?.let { it && style !is ClockWidgetStyle.Smartspacer }
 
         Column(
             modifier = Modifier
@@ -482,7 +486,7 @@ fun ConfigureClockWidgetSheet(
                             viewModel.setUseThemeColor(it)
                         }
                     )
-                    AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom) {
+                    AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom && style !is ClockWidgetStyle.Smartspacer) {
                         SwitchPreference(
                             title = stringResource(R.string.preference_clock_widget_show_seconds),
                             icon = R.drawable.timer_24px,

@@ -512,6 +512,7 @@ fun getClockStyleName(context: Context, style: ClockWidgetStyle): String {
         is ClockWidgetStyle.Segment -> context.getString(R.string.clock_style_segment)
         is ClockWidgetStyle.Empty -> context.getString(R.string.clock_style_empty)
         is ClockWidgetStyle.Custom -> context.getString(R.string.clock_style_custom)
+        is ClockWidgetStyle.Smartspacer -> context.getString(R.string.clock_style_smartspacer)
         else -> ""
     }
 }

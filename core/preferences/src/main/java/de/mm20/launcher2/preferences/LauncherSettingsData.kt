@@ -252,6 +252,7 @@ internal enum class ClockWidgetStyleEnum {
     Segment,
     Empty,
     Custom,
+    Smartspacer,
 }
 
 @Serializable
@@ -296,6 +297,10 @@ sealed interface ClockWidgetStyle {
     @Serializable
     @SerialName("empty")
     data object Empty : ClockWidgetStyle
+
+    @Serializable
+    @SerialName("smartspacer")
+    data object Smartspacer : ClockWidgetStyle
 
     @Serializable
     @SerialName("custom")

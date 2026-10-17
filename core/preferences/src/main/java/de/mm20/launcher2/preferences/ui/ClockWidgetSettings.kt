@@ -96,6 +96,7 @@ class ClockWidgetSettings internal constructor(
                 ClockWidgetStyleEnum.Segment -> ClockWidgetStyle.Segment
                 ClockWidgetStyleEnum.Empty -> ClockWidgetStyle.Empty
                 ClockWidgetStyleEnum.Custom -> it.clockWidgetCustom
+                ClockWidgetStyleEnum.Smartspacer -> ClockWidgetStyle.Smartspacer
             }
         }
 
@@ -176,4 +177,5 @@ internal val ClockWidgetStyle.enumValue
         is ClockWidgetStyle.Segment -> ClockWidgetStyleEnum.Segment
         is ClockWidgetStyle.Empty -> ClockWidgetStyleEnum.Empty
         is ClockWidgetStyle.Custom -> ClockWidgetStyleEnum.Custom
+        is ClockWidgetStyle.Smartspacer -> ClockWidgetStyleEnum.Smartspacer
     }
