@@ -1,0 +1,161 @@
+name: Rebase on upstream & build
+
+# Lives on the fork's default branch ("ci"). Your feature commits live on
+# the "smartspacer" branch, which this workflow rebases onto upstream,
+# builds, signs and publishes as a GitHub Release.
+
+on:
+  schedule:
+    - cron: '17 5 * * *'   # daily, 05:17 UTC
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Upstream target: "release" (latest vX.Y.Z tag) or "main"'
+        default: release
+        type: choice
+        options: [release, main]
+      force_build:
+        description: 'Build even if upstream has not changed'
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: rebase-and-build
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: https://github.com/MM2-0/Kvaesitso.git
+  FEATURE_BRANCH: smartspacer
+  TRACK: ${{ inputs.track || 'release' }}
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.rebase.outputs.changed }}
+      target: ${{ steps.target.outputs.ref }}
+      target_sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FEATURE_BRANCH }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "$UPSTREAM_REPO"
+          git fetch --quiet --tags upstream main
+
+      - name: Pick upstream target
+        id: target
+        run: |
+          if [ "$TRACK" = "main" ]; then
+            ref=upstream/main
+          else
+            # Only well-formed vX.Y.Z tags (upstream has a stray "v.1.34.0")
+            ref=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          fi
+          sha=$(git rev-parse "$ref^{commit}")
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Target: $ref ($sha)"
+
+      - name: Rebase feature branch
+        id: rebase
+        env:
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          if git merge-base --is-ancestor "$TARGET_SHA" HEAD; then
+            echo "Already based on target, nothing to rebase."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Keep a restore point before rewriting history
+          backup="backup/${FEATURE_BRANCH}-$(date -u +%Y%m%d-%H%M%S)"
+          git tag "$backup"
+
+          if ! git rebase "$TARGET_SHA"; then
+            git diff --name-only --diff-filter=U > conflicts.txt
+            git rebase --abort
+            echo "## Rebase failed" >> "$GITHUB_STEP_SUMMARY"
+            sed 's/^/- /' conflicts.txt >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          git push origin "$backup"
+          git push --force-with-lease origin "HEAD:$FEATURE_BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open issue on conflict
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ steps.target.outputs.ref }}
+        run: |
+          title="Rebase conflict onto $TARGET"
+          # Don't spam: skip if an open issue for this target already exists
+          if gh issue list --state open --search "\"$title\" in:title" --json number -q '.[0].number' | grep -q .; then
+            exit 0
+          fi
+          body=$(printf 'Automatic rebase of `%s` onto `%s` failed.\n\nConflicting files:\n%s\n\nResolve locally:\n```\ngit fetch upstream --tags\ngit checkout %s\ngit rebase %s\n# fix conflicts, then\ngit push --force-with-lease\n```\nRun: %s' \
+            "$FEATURE_BRANCH" "$TARGET" "$(sed 's/^/- `/; s/$/`/' conflicts.txt 2>/dev/null)" \
+            "$FEATURE_BRANCH" "$TARGET" \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
+          gh issue create --title "$title" --body "$body"
+
+  build:
+    needs: rebase
+    if: needs.rebase.outputs.changed == 'true' || inputs.force_build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FEATURE_BRANCH }}
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        env:
+          ENCODED_STRING: ${{ secrets.KEYSTORE }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keystore"
+          echo "$ENCODED_STRING" | base64 -di > "$RUNNER_TEMP/keystore/keystore.jks"
+
+      # Uses upstream's own "nightly" build type: release-optimised, signed with
+      # the gh-actions signing config, app id de.mm20.launcher2.nightly.
+      - name: Build and sign APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          export VERSION_CODE_OVERRIDE=$(date -u +%Y%m%d%H)
+          chmod +x gradlew
+          ./gradlew assembleDefaultNightly
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ needs.rebase.outputs.target }}
+        run: |
+          apk=app/app/build/outputs/apk/default/nightly/app-default-nightly.apk
+          base=${TARGET#upstream/}
+          tag="smartspacer-${base}-$(date -u +%Y%m%d-%H%M)"
+          out="kvaesitso-smartspacer-${base}.apk"
+          cp "$apk" "$out"
+          gh release create "$tag" "$out" \
+            --target "$FEATURE_BRANCH" \
+            --title "Kvaesitso + Smartspacer ($base)" \
+            --notes "Feature branch rebased onto upstream \`$TARGET\` (${{ needs.rebase.outputs.target_sha }})."
