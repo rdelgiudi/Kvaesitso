@@ -6,15 +6,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,26 +24,19 @@ import androidx.core.net.toUri
 import de.mm20.launcher2.applications.AppRepository
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.ktx.tryStartActivity
-import de.mm20.launcher2.preferences.ui.ClockWidgetSettings
 import de.mm20.launcher2.ui.R
 import de.mm20.launcher2.ui.launcher.widgets.clock.SmartspacerView
-import de.mm20.launcher2.ui.locals.LocalDarkTheme
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
 
 private const val SmartspacerPackageName = "com.kieronquinn.app.smartspacer"
 
 @Composable
-fun SmartspacerClock(
-    compact: Boolean,
-    darkColors: Boolean,
-) {
+fun SmartspacerClock() {
     // The Smartspacer layout only exists in layout-v29
     if (!isAtLeastApiLevel(29)) return
 
     val context = LocalContext.current
-    val clockSettings: ClockWidgetSettings = koinInject()
-    val useThemeColor by clockSettings.useThemeColor.collectAsState(initial = false)
 
     val appRepository: AppRepository = koinInject()
     val isInstalled by remember {
@@ -84,29 +74,10 @@ fun SmartspacerClock(
         return
     }
 
-    val color = if (useThemeColor) {
-        if (!darkColors) {
-            if (LocalDarkTheme.current) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.primaryContainer
-        } else {
-            if (LocalDarkTheme.current) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.primary
-        }
-    } else {
-        LocalContentColor.current
-    }
-
-    CompositionLocalProvider(LocalContentColor provides color) {
-        SmartspacerView(
-            modifier = if (compact) {
-                Modifier
-                    .widthIn(max = 200.dp)
-                    .height(64.dp)
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .height(104.dp)
-            }
-        )
-    }
+    // Clock appearance settings (layout, colors) don't apply, Smartspacer is styled on its own
+    SmartspacerView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(104.dp)
+    )
 }

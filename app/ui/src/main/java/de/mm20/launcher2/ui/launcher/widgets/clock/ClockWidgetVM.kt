@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.ktx.tryStartActivity
+import de.mm20.launcher2.preferences.ClockWidgetColors
 import de.mm20.launcher2.preferences.ui.ClockWidgetSettings
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.AlarmPartProvider
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.BatteryPartProvider
@@ -78,13 +79,16 @@ class ClockWidgetVM : ViewModel(), KoinComponent {
         }
     }
 
-    val compactLayout = settings.compact
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+    // When Smartspacer replaces the clock, the clock appearance settings don't apply
+    val compactLayout = combine(settings.compact, smartspacerPlacement) { compact, smartspacer ->
+        compact && smartspacer != SmartspacerPlacement.Clock
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
     val clockStyle = settings.clockStyle
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
-    val color = settings.color
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+    val color = combine(settings.color, smartspacerPlacement) { color, smartspacer ->
+        if (smartspacer == SmartspacerPlacement.Clock) ClockWidgetColors.Auto else color
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
     val alignment = settings.alignment
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)

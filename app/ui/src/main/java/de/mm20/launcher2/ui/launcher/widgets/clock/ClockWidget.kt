@@ -181,7 +181,7 @@ fun ClockWidget(
                                     }
                                 ) {
                                     when (smartspacerClock) {
-                                        true -> SmartspacerClock(false, darkColors)
+                                        true -> SmartspacerClock()
                                         false -> Clock(clockStyle, false, darkColors)
                                         null -> {}
                                     }
@@ -211,7 +211,7 @@ fun ClockWidget(
                                         provider = partProvider,
                                     )
                                 }
-                                if (clockStyle !is ClockWidgetStyle.Empty || smartspacerClock == true) {
+                                if (clockStyle !is ClockWidgetStyle.Empty) {
                                     Box(
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
@@ -224,18 +224,14 @@ fun ClockWidget(
                                 }
                                 Box(
                                     modifier = Modifier.clickable(
-                                        enabled = clockStyle !is ClockWidgetStyle.Empty && smartspacerClock == false,
+                                        enabled = clockStyle !is ClockWidgetStyle.Empty,
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
                                         viewModel.launchClockApp(context)
                                     }
                                 ) {
-                                    when (smartspacerClock) {
-                                        true -> SmartspacerClock(true, darkColors)
-                                        false -> Clock(clockStyle, true, darkColors)
-                                        null -> {}
-                                    }
+                                    Clock(clockStyle, true, darkColors)
                                 }
                             }
                         }
@@ -383,43 +379,46 @@ fun ConfigureClockWidgetSheet(
                 .padding(16.dp)
                 .navigationBarsPadding()
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-            ) {
-                ToggleButton(
-                    modifier = Modifier.weight(1f),
-                    checked = compact == false,
-                    onCheckedChange = {
-                        if (it) viewModel.setCompact(false)
-                    },
-                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+            // Clock appearance settings don't apply when Smartspacer replaces the clock
+            if (!smartspacerClock) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
                 ) {
-                    Icon(
-                        painterResource(if (compact == false) R.drawable.check_20px else R.drawable.splitscreen_top_20px),
-                        null,
-                        modifier = Modifier
-                            .padding(end = ToggleButtonDefaults.IconSpacing)
-                            .size(ToggleButtonDefaults.IconSize)
-                    )
-                    Text(text = stringResource(R.string.preference_clockwidget_layout_vertical))
-                }
-                ToggleButton(
-                    modifier = Modifier.weight(1f),
-                    checked = compact == true,
-                    onCheckedChange = {
-                        if (it) viewModel.setCompact(true)
-                    },
-                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                ) {
-                    Icon(
-                        painterResource(if (compact == true) R.drawable.check_20px else R.drawable.splitscreen_right_20px),
-                        null,
-                        modifier = Modifier
-                            .padding(end = ToggleButtonDefaults.IconSpacing)
-                            .size(ToggleButtonDefaults.IconSize)
-                    )
-                    Text(text = stringResource(R.string.preference_clockwidget_layout_horizontal))
+                    ToggleButton(
+                        modifier = Modifier.weight(1f),
+                        checked = compact == false,
+                        onCheckedChange = {
+                            if (it) viewModel.setCompact(false)
+                        },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                    ) {
+                        Icon(
+                            painterResource(if (compact == false) R.drawable.check_20px else R.drawable.splitscreen_top_20px),
+                            null,
+                            modifier = Modifier
+                                .padding(end = ToggleButtonDefaults.IconSpacing)
+                                .size(ToggleButtonDefaults.IconSize)
+                        )
+                        Text(text = stringResource(R.string.preference_clockwidget_layout_vertical))
+                    }
+                    ToggleButton(
+                        modifier = Modifier.weight(1f),
+                        checked = compact == true,
+                        onCheckedChange = {
+                            if (it) viewModel.setCompact(true)
+                        },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    ) {
+                        Icon(
+                            painterResource(if (compact == true) R.drawable.check_20px else R.drawable.splitscreen_right_20px),
+                            null,
+                            modifier = Modifier
+                                .padding(end = ToggleButtonDefaults.IconSpacing)
+                                .size(ToggleButtonDefaults.IconSize)
+                        )
+                        Text(text = stringResource(R.string.preference_clockwidget_layout_horizontal))
+                    }
                 }
             }
 
@@ -427,7 +426,6 @@ fun ConfigureClockWidgetSheet(
 
             if (smartspacerClock) {
                 Banner(
-                    modifier = Modifier.padding(vertical = 16.dp),
                     text = stringResource(R.string.preference_clockwidget_smartspacer),
                     icon = R.drawable.info_24px,
                     primaryAction = {
@@ -452,87 +450,89 @@ fun ConfigureClockWidgetSheet(
                     })
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-            ) {
-                ToggleButton(
-                    modifier = Modifier.weight(1f),
-                    checked = color == ClockWidgetColors.Auto,
-                    onCheckedChange = {
-                        if (it) viewModel.setColor(ClockWidgetColors.Auto)
-                    },
-                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+            if (!smartspacerClock) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
                 ) {
-                    Icon(
-                        painterResource(R.drawable.auto_awesome_24dp),
-                        contentDescription = null,
-                    )
-                }
-                ToggleButton(
-                    modifier = Modifier.weight(1f),
-                    checked = color == ClockWidgetColors.Dark,
-                    onCheckedChange = {
-                        if (it) viewModel.setColor(ClockWidgetColors.Dark)
-                    },
-                    shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.light_mode_24px),
-                        contentDescription = null,
-                    )
-                }
-                ToggleButton(
-                    modifier = Modifier.weight(1f),
-                    checked = color == ClockWidgetColors.Light,
-                    onCheckedChange = {
-                        if (it) viewModel.setColor(ClockWidgetColors.Light)
-                    },
-                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.dark_mode_24px),
-                        contentDescription = null,
-                    )
-                }
-            }
-            OutlinedCard(
-                modifier = Modifier.padding(top = 16.dp),
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    SwitchPreference(
-                        title = stringResource(R.string.widget_use_theme_colors),
-                        icon = R.drawable.palette_24px,
-                        value = useAccentColor,
-                        onValueChanged = {
-                            viewModel.setUseThemeColor(it)
-                        }
-                    )
-                    AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom && !smartspacerClock) {
-                        SwitchPreference(
-                            title = stringResource(R.string.preference_clock_widget_show_seconds),
-                            icon = R.drawable.timer_24px,
-                            value = showSeconds,
-                            onValueChanged = {
-                                viewModel.setShowSeconds(it)
-                            }
+                    ToggleButton(
+                        modifier = Modifier.weight(1f),
+                        checked = color == ClockWidgetColors.Auto,
+                        onCheckedChange = {
+                            if (it) viewModel.setColor(ClockWidgetColors.Auto)
+                        },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.auto_awesome_24dp),
+                            contentDescription = null,
                         )
                     }
-                    AnimatedVisibility(
-                        !smartspacerClock && (style is ClockWidgetStyle.Digital1 ||
-                                style is ClockWidgetStyle.Digital2 ||
-                                style is ClockWidgetStyle.Orbit)
+                    ToggleButton(
+                        modifier = Modifier.weight(1f),
+                        checked = color == ClockWidgetColors.Dark,
+                        onCheckedChange = {
+                            if (it) viewModel.setColor(ClockWidgetColors.Dark)
+                        },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.light_mode_24px),
+                            contentDescription = null,
+                        )
+                    }
+                    ToggleButton(
+                        modifier = Modifier.weight(1f),
+                        checked = color == ClockWidgetColors.Light,
+                        onCheckedChange = {
+                            if (it) viewModel.setColor(ClockWidgetColors.Light)
+                        },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.dark_mode_24px),
+                            contentDescription = null,
+                        )
+                    }
+                }
+                OutlinedCard(
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         SwitchPreference(
-                            title = stringResource(R.string.preference_clock_widget_monospaced),
-                            icon = R.drawable._123_24px,
-                            value = monospaced,
+                            title = stringResource(R.string.widget_use_theme_colors),
+                            icon = R.drawable.palette_24px,
+                            value = useAccentColor,
                             onValueChanged = {
-                                viewModel.setMonospaced(it)
+                                viewModel.setUseThemeColor(it)
                             }
                         )
+                        AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom) {
+                            SwitchPreference(
+                                title = stringResource(R.string.preference_clock_widget_show_seconds),
+                                icon = R.drawable.timer_24px,
+                                value = showSeconds,
+                                onValueChanged = {
+                                    viewModel.setShowSeconds(it)
+                                }
+                            )
+                        }
+                        AnimatedVisibility(
+                            style is ClockWidgetStyle.Digital1 ||
+                                    style is ClockWidgetStyle.Digital2 ||
+                                    style is ClockWidgetStyle.Orbit
+                        ) {
+                            SwitchPreference(
+                                title = stringResource(R.string.preference_clock_widget_monospaced),
+                                icon = R.drawable._123_24px,
+                                value = monospaced,
+                                onValueChanged = {
+                                    viewModel.setMonospaced(it)
+                                }
+                            )
+                        }
                     }
                 }
             }
