@@ -35,6 +35,7 @@ fun SmartspacerSettingsScreen() {
         null
     )
     val isSmartspacerEnabled by viewModel.isSmartspacerEnabled.collectAsStateWithLifecycle(null)
+    val isReplaceClockEnabled by viewModel.isReplaceClockEnabled.collectAsStateWithLifecycle(null)
 
     PreferenceScreen(
         title = stringResource(R.string.preference_smartspacer_integration)
@@ -72,6 +73,16 @@ fun SmartspacerSettingsScreen() {
                         onValueChanged = {
                             viewModel.setSmartspacerEnabled(it)
                         }
+                    )
+                    SwitchPreference(
+                        icon = R.drawable.schedule_24px,
+                        title = stringResource(R.string.preference_smartspacer_replace_clock),
+                        summary = stringResource(R.string.preference_smartspacer_replace_clock_summary),
+                        value = isReplaceClockEnabled == true,
+                        onValueChanged = {
+                            viewModel.setReplaceClockEnabled(it)
+                        },
+                        enabled = isSmartspacerEnabled == true,
                     )
 
                     Preference(

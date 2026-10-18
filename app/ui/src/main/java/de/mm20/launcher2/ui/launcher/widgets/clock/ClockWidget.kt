@@ -88,6 +88,7 @@ fun ClockWidget(
     val context = LocalContext.current
     val compact by viewModel.compactLayout.collectAsState()
     val clockStyle by viewModel.clockStyle.collectAsState()
+    val smartspacerClock by viewModel.smartspacerClock.collectAsState()
     val color by viewModel.color.collectAsState()
     val alignment by viewModel.alignment.collectAsState()
     val time = LocalTime.current
@@ -172,14 +173,18 @@ fun ClockWidget(
                             ) {
                                 Box(
                                     modifier = Modifier.clickable(
-                                        enabled = clockStyle !is ClockWidgetStyle.Empty && clockStyle !is ClockWidgetStyle.Smartspacer,
+                                        enabled = clockStyle !is ClockWidgetStyle.Empty && smartspacerClock == false,
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
                                         viewModel.launchClockApp(context)
                                     }
                                 ) {
-                                    Clock(clockStyle, false, darkColors)
+                                    when (smartspacerClock) {
+                                        true -> SmartspacerClock(false, darkColors)
+                                        false -> Clock(clockStyle, false, darkColors)
+                                        null -> {}
+                                    }
                                 }
 
                                 if (partProvider != null) {
@@ -206,7 +211,7 @@ fun ClockWidget(
                                         provider = partProvider,
                                     )
                                 }
-                                if (clockStyle !is ClockWidgetStyle.Empty) {
+                                if (clockStyle !is ClockWidgetStyle.Empty || smartspacerClock == true) {
                                     Box(
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
@@ -219,14 +224,18 @@ fun ClockWidget(
                                 }
                                 Box(
                                     modifier = Modifier.clickable(
-                                        enabled = clockStyle !is ClockWidgetStyle.Empty && clockStyle !is ClockWidgetStyle.Smartspacer,
+                                        enabled = clockStyle !is ClockWidgetStyle.Empty && smartspacerClock == false,
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
                                         viewModel.launchClockApp(context)
                                     }
                                 ) {
-                                    Clock(clockStyle, true, darkColors)
+                                    when (smartspacerClock) {
+                                        true -> SmartspacerClock(true, darkColors)
+                                        false -> Clock(clockStyle, true, darkColors)
+                                        null -> {}
+                                    }
                                 }
                             }
                         }
@@ -327,7 +336,6 @@ fun Clock(
         )
 
         is ClockWidgetStyle.Custom -> CustomClock(style, compact, useThemeColor, darkColors)
-        is ClockWidgetStyle.Smartspacer -> SmartspacerClock(compact, useThemeColor, darkColors)
         is ClockWidgetStyle.Empty -> {}
         else -> {}
     }
@@ -364,8 +372,9 @@ fun ConfigureClockWidgetSheet(
         val useAccentColor by viewModel.useThemeColor.collectAsState()
         val parts by viewModel.parts.collectAsState()
         val useSmartspacer by viewModel.useSmartspacer.collectAsState()
-        // The Smartspacer clock style takes precedence over the Smartspacer dynamic zone
-        val smartspacer = useSmartspacer?.let { it && style !is ClockWidgetStyle.Smartspacer }
+        val smartspacerReplaceClock by viewModel.smartspacerReplaceClock.collectAsState()
+        val smartspacerClock = useSmartspacer == true && smartspacerReplaceClock == true
+        val smartspacer = useSmartspacer?.let { u -> smartspacerReplaceClock?.let { r -> u && !r } }
 
         Column(
             modifier = Modifier
@@ -416,7 +425,22 @@ fun ConfigureClockWidgetSheet(
 
             val availableStyles by viewModel.availableClockStyles.collectAsState()
 
-            if (color != null && compact != null && availableStyles.isNotEmpty()) {
+            if (smartspacerClock) {
+                Banner(
+                    modifier = Modifier.padding(vertical = 16.dp),
+                    text = stringResource(R.string.preference_clockwidget_smartspacer),
+                    icon = R.drawable.info_24px,
+                    primaryAction = {
+                        Button(
+                            onClick = {
+                                viewModel.disableSmartspacer()
+                            }
+                        ) {
+                            Text(stringResource(R.string.turn_off))
+                        }
+                    }
+                )
+            } else if (color != null && compact != null && availableStyles.isNotEmpty()) {
                 WatchFaceSelector(
                     styles = availableStyles,
                     compact = compact!!,
@@ -486,7 +510,7 @@ fun ConfigureClockWidgetSheet(
                             viewModel.setUseThemeColor(it)
                         }
                     )
-                    AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom && style !is ClockWidgetStyle.Smartspacer) {
+                    AnimatedVisibility(compact == false && style !is ClockWidgetStyle.Custom && !smartspacerClock) {
                         SwitchPreference(
                             title = stringResource(R.string.preference_clock_widget_show_seconds),
                             icon = R.drawable.timer_24px,
@@ -497,9 +521,9 @@ fun ConfigureClockWidgetSheet(
                         )
                     }
                     AnimatedVisibility(
-                        style is ClockWidgetStyle.Digital1 ||
+                        !smartspacerClock && (style is ClockWidgetStyle.Digital1 ||
                                 style is ClockWidgetStyle.Digital2 ||
-                                style is ClockWidgetStyle.Orbit
+                                style is ClockWidgetStyle.Orbit)
                     ) {
                         SwitchPreference(
                             title = stringResource(R.string.preference_clock_widget_monospaced),

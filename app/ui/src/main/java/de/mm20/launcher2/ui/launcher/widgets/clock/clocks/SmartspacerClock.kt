@@ -27,6 +27,7 @@ import androidx.core.net.toUri
 import de.mm20.launcher2.applications.AppRepository
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.ktx.tryStartActivity
+import de.mm20.launcher2.preferences.ui.ClockWidgetSettings
 import de.mm20.launcher2.ui.R
 import de.mm20.launcher2.ui.launcher.widgets.clock.SmartspacerView
 import de.mm20.launcher2.ui.locals.LocalDarkTheme
@@ -38,13 +39,14 @@ private const val SmartspacerPackageName = "com.kieronquinn.app.smartspacer"
 @Composable
 fun SmartspacerClock(
     compact: Boolean,
-    useThemeColor: Boolean,
     darkColors: Boolean,
 ) {
-    // The Smartspacer layout only exists in layout-v29; the style may still be restored from a backup on older devices
+    // The Smartspacer layout only exists in layout-v29
     if (!isAtLeastApiLevel(29)) return
 
     val context = LocalContext.current
+    val clockSettings: ClockWidgetSettings = koinInject()
+    val useThemeColor by clockSettings.useThemeColor.collectAsState(initial = false)
 
     val appRepository: AppRepository = koinInject()
     val isInstalled by remember {

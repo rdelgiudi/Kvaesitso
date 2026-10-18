@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.mm20.launcher2.ktx.isAtLeastApiLevel
 import de.mm20.launcher2.ktx.tryStartActivity
-import de.mm20.launcher2.preferences.ClockWidgetStyle
 import de.mm20.launcher2.preferences.ui.ClockWidgetSettings
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.AlarmPartProvider
 import de.mm20.launcher2.ui.launcher.widgets.clock.parts.BatteryPartProvider
@@ -30,13 +29,29 @@ import org.koin.core.component.inject
 class ClockWidgetVM : ViewModel(), KoinComponent {
     private val settings: ClockWidgetSettings by inject()
 
+    private val smartspacerPlacement = combine(
+        settings.useSmartspacer,
+        settings.smartspacerReplaceClock,
+    ) { enabled, replaceClock ->
+        when {
+            !enabled || !isAtLeastApiLevel(29) -> null
+            replaceClock -> SmartspacerPlacement.Clock
+            else -> SmartspacerPlacement.DynamicZone
+        }
+    }.distinctUntilChanged()
+
+    /**
+     * Whether Smartspacer is shown in place of the clock
+     */
+    val smartspacerClock = smartspacerPlacement
+        .map { it == SmartspacerPlacement.Clock }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+
     private val partProviders = combine(
         settings.parts,
-        settings.useSmartspacer,
-        settings.clockStyle.map { it is ClockWidgetStyle.Smartspacer }.distinctUntilChanged(),
-    ) { parts, smartspacer, smartspacerClock ->
-        // Only one Smartspacer view at a time: if the clock itself is Smartspacer, use regular parts below it
-        if (smartspacer && !smartspacerClock && isAtLeastApiLevel(29)) {
+        smartspacerPlacement,
+    ) { parts, smartspacer ->
+        if (smartspacer == SmartspacerPlacement.DynamicZone) {
             return@combine listOf(SmartspacerPartProvider())
         }
 
@@ -87,4 +102,9 @@ class ClockWidgetVM : ViewModel(), KoinComponent {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         })
     }
+}
+
+private enum class SmartspacerPlacement {
+    DynamicZone,
+    Clock,
 }

@@ -709,6 +709,8 @@
     <string name="preference_smartspacer_integration">Smartspacer</string>
     <string name="preference_smartspacer_integration_description">Smartspacer is a free and open source At a Glance widget. If installed, it can be integrated into the dynamic zone of the clock widget</string>
     <string name="preference_smartspacer_enable">Enable Smartspacer integration</string>
+    <string name="preference_smartspacer_replace_clock">Replace clock</string>
+    <string name="preference_smartspacer_replace_clock_summary">Show Smartspacer in place of the clock instead of in the dynamic zone below it</string>
     <string name="preference_launch_smartspacer_app">Open Smartspacer</string>
     <string name="preference_feed_integration">Feed</string>
     <string name="preference_category_feed_provider">Feed provider</string>
@@ -914,7 +916,6 @@
     <string name="clock_style_segment">7-segment</string>
     <string name="clock_style_empty">No clock</string>
     <string name="clock_style_custom">Custom widget</string>
-    <string name="clock_style_smartspacer">Smartspacer</string>
     <string name="clock_style_smartspacer_get">Get Smartspacer</string>
     <string name="clock_variant_outlined">Outlined</string>
     <string name="clock_variant_analog_ticks">Ticks</string>

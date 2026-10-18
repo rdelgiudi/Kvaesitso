@@ -37,6 +37,7 @@ data class LauncherSettingsData internal constructor(
 
     val clockWidgetCompact: Boolean = false,
     val clockWidgetSmartspacer: Boolean = false,
+    val clockWidgetSmartspacerReplaceClock: Boolean = false,
 
     @Deprecated("")
     @SerialName("clockWidgetStyle")
@@ -252,7 +253,6 @@ internal enum class ClockWidgetStyleEnum {
     Segment,
     Empty,
     Custom,
-    Smartspacer,
 }
 
 @Serializable
@@ -297,10 +297,6 @@ sealed interface ClockWidgetStyle {
     @Serializable
     @SerialName("empty")
     data object Empty : ClockWidgetStyle
-
-    @Serializable
-    @SerialName("smartspacer")
-    data object Smartspacer : ClockWidgetStyle
 
     @Serializable
     @SerialName("custom")

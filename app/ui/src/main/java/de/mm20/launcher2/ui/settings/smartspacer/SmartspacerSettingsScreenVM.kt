@@ -49,4 +49,11 @@ class SmartspacerSettingsScreenVM: ViewModel(), KoinComponent {
         clockWidgetSettings.setUseSmartspacer(enabled)
     }
 
+    val isReplaceClockEnabled = clockWidgetSettings.smartspacerReplaceClock
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(), 1)
+
+    fun setReplaceClockEnabled(enabled: Boolean) {
+        clockWidgetSettings.setSmartspacerReplaceClock(enabled)
+    }
+
 }

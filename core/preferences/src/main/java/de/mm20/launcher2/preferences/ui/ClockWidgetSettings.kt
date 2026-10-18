@@ -96,7 +96,6 @@ class ClockWidgetSettings internal constructor(
                 ClockWidgetStyleEnum.Segment -> ClockWidgetStyle.Segment
                 ClockWidgetStyleEnum.Empty -> ClockWidgetStyle.Empty
                 ClockWidgetStyleEnum.Custom -> it.clockWidgetCustom
-                ClockWidgetStyleEnum.Smartspacer -> ClockWidgetStyle.Smartspacer
             }
         }
 
@@ -165,6 +164,15 @@ class ClockWidgetSettings internal constructor(
         }
     }
 
+    val smartspacerReplaceClock
+        get() = launcherDataStore.data.map { it.clockWidgetSmartspacerReplaceClock }
+
+    fun setSmartspacerReplaceClock(enabled: Boolean) {
+        launcherDataStore.update {
+            it.copy(clockWidgetSmartspacerReplaceClock = enabled)
+        }
+    }
+
 }
 
 internal val ClockWidgetStyle.enumValue
@@ -177,5 +185,4 @@ internal val ClockWidgetStyle.enumValue
         is ClockWidgetStyle.Segment -> ClockWidgetStyleEnum.Segment
         is ClockWidgetStyle.Empty -> ClockWidgetStyleEnum.Empty
         is ClockWidgetStyle.Custom -> ClockWidgetStyleEnum.Custom
-        is ClockWidgetStyle.Smartspacer -> ClockWidgetStyleEnum.Smartspacer
     }
